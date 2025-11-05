@@ -17,6 +17,9 @@
 
 ## Objective
 
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/ViT_For_100_Class)
+
+
 This project implements a hybrid architecture combining Convolutional Neural Networks (CNNs) and Vision Transformers (ViT) for image classification on the CIFAR-100 dataset. The primary objective is to leverage the inductive biases of CNNs for low-level feature extraction while utilizing the self-attention mechanisms of transformers for global context modeling.
 
 ---
