@@ -76,7 +76,7 @@ The solution employs a hybrid architecture that:
 
 ### Visual Overview
 
-<img width="500" height="500" alt="Gemini_Generated_Image_nvl61nnvl61nnvl6" src="https://github.com/user-attachments/assets/611f1c4c-eddd-4dbd-b452-759417d71582" />
+<img width="700" height="700" alt="Gemini_Generated_Image_nvl61nnvl61nnvl6" src="https://github.com/user-attachments/assets/611f1c4c-eddd-4dbd-b452-759417d71582" />
 
 
 
