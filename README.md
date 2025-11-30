@@ -339,8 +339,6 @@ The 20% train-validation gap suggests:
 
 ### Primary Reference
 
-## References
-
 [1] Dosovitskiy, A., et al. "An Image is Worth 16×16 Words: Transformers for Image Recognition at Scale." ICLR, 2021.
 
 [2] Wu, Z., et al. "CvT: Introducing Convolutions to Vision Transformers." ICCV, 2021.
