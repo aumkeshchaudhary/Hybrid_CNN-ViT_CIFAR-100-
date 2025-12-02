@@ -229,13 +229,6 @@ Hybrid_CNN+ViT.ipynb
 - **Gap:** 20.0% (indicates moderate overfitting)
 - **Interpretation:** Model learns training patterns; room for improvement via better regularization or data
 
-
-**Observations:**
-- Training accuracy reached 78.40%, showing the model learned the training data well
-- Validation accuracy of 66.67% indicates moderate overfitting (~12% gap)
-- The gap between training and validation suggests room for improved regularization
-- Steady validation improvement throughout training with minimal fluctuation
-
 ---
 
 ## Analysis
