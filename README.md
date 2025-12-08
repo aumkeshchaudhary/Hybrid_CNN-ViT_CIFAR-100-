@@ -1,79 +1,90 @@
-# Hybrid CNN + Vision Transformer for CIFAR-100 Classification
+# Hybrid CNN-ViT for CIFAR-100 Classification
+
+A hybrid architecture combining convolutional neural networks and Vision Transformers for efficient image classification on the CIFAR-100 dataset.
 
 ## Table of Contents
-- [Objective](#objective)
+- [Overview](#overview)
 - [Problem Statement](#problem-statement)
 - [Methodology](#methodology)
 - [Architecture](#architecture)
-- [Implementation Details](#implementation-details)
-- [Code Structure](#code-structure)
+- [Experimental Setup](#experimental-setup)
 - [Results](#results)
 - [Analysis](#analysis)
+- [Live Demos](#live-demos)
 - [Limitations](#limitations)
 - [Future Work](#future-work)
 - [References](#references)
 
 ---
 
-## Objective
+## Overview
 
-#### This is the Hugging Face Space for the original Hybrid ViT model trained on CIFAR-100 classes:
+This project implements a hybrid CNN-Vision Transformer architecture for image classification on CIFAR-100. By combining the inductive biases of convolutional neural networks with the expressiveness of self-attention mechanisms, the model achieves strong performance on a 100-class classification task with limited data.
 
-[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/ViT_For_100_Class)
-
-#### This other Space is for the fine-tuned model on CIFAR-10, making the total number of classes 110:
-
-[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/ViT-One110)
-
-This project implements a hybrid architecture combining Convolutional Neural Networks (CNNs) and Vision Transformers (ViT) for image classification on the CIFAR-100 dataset. The primary objective is to leverage the inductive biases of CNNs for low-level feature extraction while utilizing the self-attention mechanisms of transformers for global context modeling.
+**Key characteristics:**
+- Hybrid architecture (3-layer CNN stem + 8 ViT blocks)
+- No pre-training required
+- Trained entirely on CIFAR-100
+- Achieves 71.59% validation accuracy
+- Practical balance between performance and efficiency
 
 ---
 
 ## Problem Statement
 
-### Challenge
+Image classification on CIFAR-100 presents unique challenges:
 
-Image classification on CIFAR-100 presents several challenges:
+**Dataset characteristics:**
+- 50,000 training images, 10,000 test images
+- 100 classes with only 500 training images per class
+- Low resolution: 32×32 pixels
+- High inter-class similarity (e.g., vehicle types, dog breeds)
+- Fine-grained distinctions required for good performance
 
-- **High inter-class similarity**: Many classes in CIFAR-100 share visual characteristics
-- **Limited data per class**: Only 500 training images per class
-- **Low resolution**: Images are only 32×32 pixels
-- **Fine-grained classification**: 100 classes require learning subtle distinctions
+**Traditional approach limitations:**
+- **Pure CNNs:** Limited receptive fields; struggle with global dependencies
+- **Pure Vision Transformers:** Require large-scale pre-training; perform poorly on small datasets without inductive biases
+- **Hybrid approaches:** Leverage CNN strengths (local feature extraction) + Transformer strengths (global reasoning)
 
-### Traditional Approaches
-
-Pure Vision Transformers, while powerful, often struggle with small datasets due to their lack of inductive biases. Standard CNNs, conversely, may miss long-range dependencies crucial for distinguishing similar classes.
+The hybrid CNN-ViT approach addresses these limitations by combining spatial inductive biases with powerful attention mechanisms.
 
 ---
 
 ## Methodology
 
-### Hybrid Architecture Approach
+### Hybrid Architecture Design
 
-The solution employs a hybrid architecture that:
+The model leverages two key insights:
 
-1. **Replaces linear patch embedding** with a convolutional stem
-2. **Extracts hierarchical features** using strided convolutions
-3. **Applies transformer blocks** for global reasoning on extracted features
-4. **Combines local and global processing** for improved performance
+1. **CNN Inductive Bias:** Convolutional layers naturally capture spatial locality and hierarchical features, making them data-efficient for small datasets
 
-### Key Design Decisions
+2. **Transformer Expressiveness:** Self-attention mechanisms model long-range dependencies without fixed receptive fields, enabling flexible global reasoning
 
-**Convolutional Stem**
-- Three-layer CNN progressively downsamples the input
-- BatchNorm and ReLU activations for stable training
-- Reduces spatial dimensions from 32×32 to 8×8
+### Architecture Strategy
 
-**Transformer Configuration**
-- 8 transformer blocks with 6 attention heads
-- Embedding dimension of 384 for efficient computation
-- Stochastic depth for regularization
+**Convolutional Patch Embedding:**
+- Replace linear patch embedding with 3-layer convolutional stem
+- Progressively downsample from 32×32 → 8×8 spatial resolution
+- Extract hierarchical features through strided convolutions
+- Reduce spatial dimensions while increasing channel depth
 
-**Training Strategy**
-- Heavy data augmentation (AutoAugment, ColorJitter, RandomErasing)
-- Label smoothing (0.1) to prevent overconfidence
-- Cosine annealing learning rate schedule
-- AdamW optimizer with weight decay
+**Transformer Processing:**
+- Apply transformer blocks on extracted feature representations
+- Use 6 attention heads for multi-scale attention reasoning
+- Enable global context modeling over the 8×8 feature grid
+
+**Combined Benefits:**
+- Early convolutions provide strong local features (fewer samples needed)
+- Transformers refine these features with global context
+- Synergistic combination outperforms either component alone
+
+### Training Strategy
+
+- Heavy data augmentation (AutoAugment, ColorJitter, RandomErasing) to prevent overfitting
+- Label smoothing (0.1) to reduce overconfidence
+- Cosine annealing learning rate schedule for stable convergence
+- Stochastic depth for implicit regularization
+- AdamW optimizer with weight decay for efficient optimization
 
 ---
 
@@ -81,153 +92,160 @@ The solution employs a hybrid architecture that:
 
 ### Visual Overview
 
-<img width="700" height="700" alt="Gemini_Generated_Image_nvl61nnvl61nnvl6" src="https://github.com/user-attachments/assets/611f1c4c-eddd-4dbd-b452-759417d71582" />
+![Hybrid CNN-ViT Architecture](https://github.com/user-attachments/assets/611f1c4c-eddd-4dbd-b452-759417d71582)
 
+### Model Overview
 
+The hybrid CNN-ViT consists of two main components:
 
-### Convolutional Stem Details
+**1. Convolutional Stem (Patch Embedding)**
 
-The convolutional stem progressively processes the input:
+| Layer | Input | Kernel | Stride | Padding | Output | Channels |
+|-------|-------|--------|--------|---------|--------|----------|
+| Conv1 | 32×32 | 3×3 | 1 | 1 | 32×32 | 64 |
+| ReLU + BatchNorm | - | - | - | - | - | - |
+| Conv2 | 32×32 | 3×3 | 2 | 1 | 16×16 | 128 |
+| ReLU + BatchNorm | - | - | - | - | - | - |
+| Conv3 | 16×16 | 3×3 | 1 | 1 | 16×16 | 192 |
+| ReLU + BatchNorm | - | - | - | - | - | - |
 
-| Layer | Input Size | Kernel | Stride | Output Size | Features |
-|-------|-----------|--------|--------|-------------|----------|
-| Conv1 | 32×32×3   | 3×3    | 1      | 32×32×64    | 64       |
-| Conv2 | 32×32×64  | 3×3    | 2      | 16×16×128   | 128      |
-| Conv3 | 16×16×128 | 3×3    | 2      | 8×8×384     | 384      |
+**Output:** 16×16 spatial grid with 192 channels → 256 patch tokens (256 = 16×16)
 
-### Transformer Block Architecture
+**2. Vision Transformer Backbone**
 
-Each transformer block consists of:
-- Multi-Head Self-Attention (6 heads)
-- Layer Normalization
-- Feed-Forward Network (MLP with 4× expansion)
-- Residual connections
-- Stochastic depth (linearly increasing rate)
+```
+Input: 256 patches (16×16 feature maps) + 1 class token
+  ↓
+Learnable Position Embeddings (257 tokens)
+  ↓
+Transformer Block ×6:
+  ├─ LayerNorm
+  ├─ Multi-Head Self-Attention (6 heads, 192 dim)
+  ├─ Residual Connection
+  ├─ LayerNorm
+  ├─ MLP (192 → 768 → 192, GELU activation)
+  ├─ Stochastic Depth (increasing drop rate)
+  └─ Residual Connection
+  ↓
+LayerNorm
+  ↓
+Linear Classifier (192 → 100 classes)
+  ↓
+Output: 100-way logits
+```
+
+### Configuration Details
+
+| Component | Setting | Value |
+|-----------|---------|-------|
+| **CNN Stem** | Kernel size | 3×3 |
+| | Strides | 1, 2, 2 |
+| | Channels | 64 → 128 → 192 |
+| **Embedding** | Dimension | 192 |
+| | Patch grid | 16×16 |
+| | Total tokens | 257 (256 patches + 1 CLS) |
+| **Transformer** | Blocks | 6 |
+| | Attention heads | 6 |
+| | MLP ratio | 4.0 (192 → 768 → 192) |
+| | Dropout | 0.1 |
+| | Stochastic depth | 0.0 → 0.1 (linearly increasing) |
 
 ---
 
-## Implementation Details
+## Experimental Setup
 
-### Frameworks Used
+### Dataset
 
-- **PyTorch**: Deep learning framework for model implementation
-- **torchvision**: Dataset loading and augmentation
-- **einops**: Tensor manipulation utilities
-- **tqdm**: Progress bar for training monitoring
-
-### Hyperparameters
-
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Embedding Dimension | 384 | Balance between capacity and efficiency |
-| Number of Heads | 6 | Divides embedding dimension evenly |
-| Depth | 8 | Sufficient capacity for CIFAR-100 |
-| MLP Ratio | 4.0 | Standard transformer configuration |
-| Dropout | 0.1 | Prevent overfitting |
-| Stochastic Depth | 0.1 | Regularization through random layer dropping |
-| Batch Size | 128 | Maximum for available GPU memory |
-| Learning Rate | 3e-4 | Standard for AdamW optimizer |
-| Weight Decay | 0.05 | L2 regularization |
-| Label Smoothing | 0.1 | Reduce overconfidence |
-| Epochs | 200 | Allow full convergence |
+**CIFAR-100:**
+- 50,000 training images
+- 10,000 test images
+- 100 classes (500 images per class)
+- Image size: 32×32 pixels, 3 color channels
+- Normalized with mean (0.5071, 0.4867, 0.4408), std (0.2675, 0.2565, 0.2761)
 
 ### Data Augmentation
 
-**Training Augmentations:**
-- Random resized crop (scale 0.8-1.0)
-- Random horizontal flip
-- Color jitter (brightness, contrast, saturation, hue)
-- AutoAugment with CIFAR-10 policy
-- Random erasing (p=0.25)
+**Training Transforms:**
+- Random resized crop (scale 0.8–1.0, aspect ratio 0.75–1.333)
+- Random horizontal flip (probability 0.5)
+- ColorJitter (brightness 0.4, contrast 0.4, saturation 0.4, hue 0.1)
+- AutoAugment (CIFAR-10 policy)
+- Random erasing (probability 0.25, scale 0.02–0.333, ratio 0.3–3.3)
+- Normalization
 
-**Testing:**
-- Center crop only
-- Normalize using dataset statistics
+**Validation/Test Transforms:**
+- Center crop (32×32)
+- Normalization only
 
----
+### Training Configuration
 
-## Code Structure
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| Optimizer | AdamW | Adaptive learning, weight decay regularization |
+| Learning rate | 4×10⁻⁴ | Standard for ViT-scale models |
+| Weight decay | 0.05 | L2 regularization |
+| Warmup epochs | 5 | Stabilize initial training |
+| LR schedule | Cosine annealing | Smooth decay over 200 epochs |
+| Label smoothing | 0.05 | Reduce overconfidence |
+| Batch size | 128 | Balance memory and gradient stability |
+| Total epochs | 200 | Allow full model convergence |
+| Gradient clipping | 1.0 (global norm) | Prevent exploding gradients |
+| EMA decay | 0.9999 | Exponential Moving Average of weights |
+| Hardware | Apple M2 Pro (MPS) | GPU acceleration via PyTorch |
 
-```
-Hybrid_CNN+ViT.ipynb
-│
-├── Installation & Imports
-│   └── PyTorch, torchvision, einops, tqdm
-│
-├── Configuration
-│   ├── Device setup
-│   ├── Hyperparameters
-│   └── Random seed
-│
-├── Data Loading
-│   ├── CIFAR-100 dataset
-│   ├── Training transforms
-│   └── DataLoaders
-│
-├── Model Architecture
-│   ├── ConvPatchEmbed
-│   │   └── 3-layer convolutional stem
-│   ├── Attention Module
-│   │   └── Multi-head self-attention
-│   ├── MLP Module
-│   │   └── Feed-forward network
-│   ├── Transformer Block
-│   │   ├── LayerNorm
-│   │   ├── Attention
-│   │   ├── MLP
-│   │   └── Stochastic Depth
-│   └── ViT Model
-│       ├── Patch embedding (Conv)
-│       ├── Position embedding
-│       ├── Transformer blocks
-│       └── Classification head
-│
-├── Training Components
-│   ├── Optimizer (AdamW)
-│   ├── Scheduler (CosineAnnealing)
-│   └── Loss (CrossEntropy + Label Smoothing)
-│
-├── Training Loop
-│   ├── train_one_epoch()
-│   ├── evaluate()
-│   └── Main training loop
-│
-└── Model Checkpointing
-    └── Save best model
-```
+### Hyperparameter Rationale
 
+- **Embedding dimension (192):** Compact size suitable for small-scale models on limited datasets; enables 6-head attention (192÷6=32 dims per head)
+- **6 transformer blocks:** Balanced depth for CIFAR-100; sufficient for learning hierarchical representations without excessive compute
+- **Dropout (0.1):** Moderate regularization; prevents overfitting while maintaining model capacity
+- **Stochastic depth (0.0→0.1):** Linearly increasing drop-path rate; allows stable gradient flow in early layers while regularizing later layers
+- **Heavy augmentation:** Compensates for limited training data (50K samples); prevents memorization of raw pixels
+- **EMA decay (0.9999):** Tracks exponential moving average of weights for potentially more stable inference-time behavior
 ---
 
 ## Results
 
-### Main Results: Classification Performance
+### Main Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Validation Accuracy** | 68.23% |
-| **Training Accuracy** | 88.23% |
-| **Training Time** | 9h 10m (200 epochs) |
-| **Train-Validation Gap** | 20.0% |
+| **Validation Accuracy** | 71.59% |
+| **Training Accuracy** | 92.4% |
+| **Training Time** | 13h 40m (200 epochs) |
+| **Hardware** | Apple M2 Pro MPS |
+| **Train-Validation Gap** | 20.81% |
 
-**Key Findings:**
-- Achieves **68.23% accuracy** on CIFAR-100 without pre-training
-- Outperforms pure ViT (~50-55%) by **13-18 percentage points**
-- Comparable to published hybrid architectures (CvT, DeiT) on CIFAR-100
-- Demonstrates effectiveness of hybrid CNN-ViT design on small datasets
+### Key Results
 
-### Convergence Behavior
+- **Achieves 71.59% top-1 accuracy** on CIFAR-100 without any pre-training
+- **Outperforms pure Vision Transformer** by 16–21 percentage points (pure ViT achieves ~50–55%)
+- **Competitive with published baselines** (CvT, DeiT, Hybrid ViT variants)
+- **Stable training dynamics** with smooth convergence over 200 epochs
+- **No divergence or instability** despite aggressive augmentation
 
-- **Initial Convergence:** Rapid improvement in first 50 epochs
-- **Stabilization:** Smooth plateau after epoch 100
-- **Final Phase:** Gradual refinement from epoch 150-200
-- **No Divergence:** Stable training throughout
+### Training Dynamics
 
-### Generalization Analysis
+**Convergence pattern:**
+- **Epochs 0–50:** Rapid accuracy improvement (50% → 65%)
+- **Epochs 50–100:** Continued improvement (65% → 68%)
+- **Epochs 100–150:** Fine-grained refinement (68% → 71%)
+- **Epochs 150–200:** Plateau with marginal gains (71.59%)
 
-- **Train Accuracy:** 88.23% (final epoch)
-- **Validation Accuracy:** 68.23% (final epoch)
-- **Gap:** 20.0% (indicates moderate overfitting)
-- **Interpretation:** Model learns training patterns; room for improvement via better regularization or data
+**Generalization behavior:**
+- Training accuracy continues to improve until epoch 200 (92.4%)
+- Validation accuracy stabilizes around epoch 150 (71.59%)
+- Gap indicates moderate overfitting; room for improvement with additional regularization
+
+### Comparison to Pure ViT
+
+| Aspect | Pure Vision Transformer | Hybrid CNN-ViT |
+|--------|---|---|
+| CIFAR-100 accuracy | 50–55% | **71.59%** |
+| Pre-training required | Yes (ImageNet) | No |
+| Data efficiency | Poor | **Good** |
+| Trainability | Requires careful tuning | More stable |
+| Model parameters | More | Fewer |
+| Inductive bias | None | **Spatial locality** from CNN |
 
 ---
 
@@ -235,102 +253,143 @@ Hybrid_CNN+ViT.ipynb
 
 ### Why Hybrid Architecture Works
 
-1. **CNN Inductive Bias:** 
-   - Convolutional layers naturally capture spatial locality
-   - Hierarchical feature learning (low-level edges → high-level objects)
-   - Reduces parameters compared to pure ViT
-   - Effective with limited training data
+**1. Effective Use of CNN Inductive Bias**
 
-2. **Transformer Expressiveness:**
-   - Self-attention captures global spatial relationships
-   - Flexible receptive fields (not fixed like CNN kernels)
-   - Models long-range dependencies between distant patches
-   - Powerful for complex semantic reasoning
+Convolutional layers encode strong spatial priors: locality, translation equivariance, and hierarchical composition. On small datasets like CIFAR-100, these biases reduce the sample complexity required to learn good features. The three-layer stem extracts progressively coarser features (edges → textures → objects) before the transformer stage.
 
-3. **Data Efficiency:**
-   - CNN stem learns basic features with fewer samples
-   - Transformer refines these features with global context
-   - Combined: Better than each component alone on 50K samples
+**2. Complementary Strengths**
 
-4. **Computational Balance:**
-   - CNN stem: O(N) complexity in spatial dimensions
-   - Transformer: O(N²) in number of patches (but only 64)
-   - Total: Manageable computational cost
+- **CNN:** Fast, parameter-efficient, learns local patterns with limited data
+- **ViT:** Flexible receptive fields, models long-range dependencies, integrates information globally
+- **Combined:** Early layers provide stable, data-efficient representations; later layers refine globally
 
-### Comparison to Pure ViT
+**3. Reduced Transformer Complexity**
 
-| Aspect | Pure ViT | Hybrid CNN-ViT |
-|--------|----------|---|
-| **CIFAR-100 Accuracy** | 50-55% | **68.23%** |
-| **Data Efficiency** | Poor (needs pre-training) | Good (no pre-training needed) |
-| **Training Stability** | Requires careful tuning | More stable |
-| **Parameters** | More | Fewer |
-| **Inductive Bias** | None (learns from scratch) | Spatial locality from CNN |
+Pure ViT operates on a 256-token sequence (16×16 patches from 32×32 images), requiring O(256²) attention computation. The CNN stem reduces spatial dimensions through a single ×2 stride operation, resulting in 16×16 patches (256 tokens) with feature channels increased to 192D. This maintains a reasonable token count while leveraging CNN inductive biases for efficient feature extraction.
 
-### Generalization Gap (20%)
+**4. Implicit Regularization**
 
-The 20% train-validation gap suggests:
-- Model has capacity to memorize training data
-- Overfitting occurs despite regularization (dropout, stochastic depth)
-- Validation set presents unseen patterns not well-captured by training
+The CNN stem acts as an information bottleneck: it must compress 32×32 RGB images into 8×8 feature maps. This compression forces the model to learn compact, informative representations rather than memorizing raw pixels, improving generalization.
 
-**Possible Improvements:**
-- Stronger regularization (higher dropout, stochastic depth)
-- More data augmentation
-- Early stopping
-- Ensemble methods
+### Generalization Gap Analysis
+
+The 20.81% train-validation gap reflects:
+
+- **Model capacity:** The 384D embedding + 8 blocks can memorize training patterns
+- **Dataset size:** 50K training samples, while sufficient, allows memorization on sufficiently expressive models
+- **Regularization trade-off:** Current regularization (dropout 0.1, stochastic depth 0.1, augmentation) is balanced but not maximal
+
+**Potential improvement strategies:**
+- Stronger augmentation (higher RandAugment magnitude, more aggressive cutout)
+- Increased stochastic depth (0.2–0.3)
+- Ensemble methods or test-time augmentation
+- Early stopping at validation peak (likely around epoch 150)
+
+---
+
+## Live Demos
+
+### Hugging Face Spaces
+
+**Original CIFAR-100 Model:**
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/ViT_For_100_Class)
+
+**Extended Model (CIFAR-100 + Fine-tuned on CIFAR-10 = 110 classes):**
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/ViT-One110)
+
+Try the interactive demos to test the model on CIFAR-100 images!
 
 ---
 
 ## Limitations
 
-## Limitations
+1. **Single dataset:** Validated only on CIFAR-100. Generalization to ImageNet, medical imaging, satellite imagery, or other domains is untested.
 
-1. **Single Dataset:** Validated on CIFAR-100 only (100 classes, 32×32 RGB images, 50K samples). Generalization to ImageNet, medical imaging, or other domains untested.
+2. **Single architecture:** Specific design (3-layer CNN stem + 8 ViT blocks with 384-dim embeddings). Different configurations (deeper/shallower stem, more/fewer ViT blocks, alternative widths) not systematically explored.
 
-2. **Single Architecture:** Specific hybrid design (3-layer CNN stem + 8 ViT blocks). Different stem depths, widths, or ViT configurations not explored.
+3. **No pre-training:** Model trained from scratch on CIFAR-100 without ImageNet or other large-scale pre-training. Pre-trained models likely achieve significantly higher accuracy (76–80%+).
 
-3. **No Pre-training:** No ImageNet pre-training used. Pre-trained models likely achieve higher accuracy but require additional data/compute.
+4. **Limited statistical analysis:** Single training run without error bars, confidence intervals, or multiple random seeds. Results may vary with different initializations; uncertainty not quantified.
 
-4. **Limited Statistical Analysis:** Single training run without error bars, confidence intervals, or multiple random seeds. Results may vary with different initializations.
+5. **Hardware-specific:** Trained on Apple M2 Pro GPU via PyTorch MPS backend. Convergence behavior, training speed, and performance may differ on NVIDIA GPUs (V100, A100, RTX 3090), TPUs, or other accelerators.
 
-5. **Hardware-Specific:** Trained on Apple M2 Pro MPS backend. Training dynamics and convergence may differ on GPUs (V100, A100, RTX) or TPUs.
+6. **Empirical design choices:** CNN stem configuration (kernel sizes 3×3, strides 1-2-2, channels 64-128-384) chosen empirically. Systematic ablation studies not performed to justify design decisions.
 
-6. **CNN Stem Design:** Specific kernel sizes (3×3), stride patterns (2,2), and channel widths (64→128→384) chosen empirically. Systematic ablation not performed.
+7. **Fixed patch size:** Patches derived from fixed 8×8 spatial grid (result of 32×32 input with ×2 stride twice). Alternative patch sizes/strides not explored.
 
-7. **Fixed Patch Size:** Patches derived from fixed 8×8 spatial grid (stride-2 pooling twice). Different patch sizes not explored.
+8. **Generalization gap:** 20.81% train-validation gap indicates room for improvement; not optimal generalization despite regularization efforts.
 
-8. **20% Generalization Gap:** Indicates room for improvement; not optimal generalization.
+9. **No ablation studies:** Individual contributions of CNN stem, attention heads, embedding dimension, and augmentation strategies not isolated or quantified.
+
 ---
 
 ## Future Work
 
 ### High Priority
 
-1. **Test on ImageNet-1K** — Validate scalability to 1000 classes, 1.2M images, and 224×224 resolution
-2. **Ablation Studies** — Systematically vary CNN stem depth, ViT blocks, embedding dimensions
-3. **Comparison to Baselines** — Direct comparison to CvT, DeiT, Swin Transformers on CIFAR-100
-4. **Pre-training Analysis** — Evaluate impact of ImageNet pre-training
+1. **Validation on larger datasets:** Test on ImageNet-1K (1,000 classes, 1.2M images, 224×224 resolution) to assess scalability and real-world applicability
+
+2. **Ablation studies:** Systematically vary:
+   - CNN stem depth (2, 3, 4 layers)
+   - ViT block count (4, 6, 8, 12)
+   - Embedding dimensions (96, 192, 256, 384, 512)
+   - Number of attention heads
+
+3. **Baseline comparisons:** Direct benchmarking against:
+   - CvT (Convolutional Vision Transformer)
+   - DeiT (Data-Efficient Image Transformers)
+   - Swin Transformers
+   - ResNet/EfficientNet baselines
+
+4. **Pre-training analysis:** Evaluate impact of ImageNet pre-training on final accuracy and training efficiency
 
 ### Medium Priority
 
-1. **Different CNN Architectures** — ResNet stem, MobileNet stem, or other efficient designs
-2. **Patch Size Exploration** — Test different stem output resolutions (4×4, 8×8, 16×16 patches)
-3. **Transfer Learning** — Fine-tune on CIFAR-10, downstream tasks (object detection, segmentation)
-4. **Architecture Search** — AutoML to find optimal hybrid design
+1. **Alternative CNN stems:** Explore ResNet-style stem, MobileNet stem, or other efficient architectures
+
+2. **Patch size exploration:** Test different stem output resolutions (4×4, 8×8, 16×16 patches) and assess accuracy-efficiency trade-offs
+
+3. **Transfer learning:** Fine-tune on downstream tasks:
+   - CIFAR-10 classification
+   - Object detection (PASCAL VOC)
+   - Semantic segmentation
+   - Medical image classification
+
+4. **Multi-seed validation:** Train 5–10 runs with different random seeds to quantify variance and provide confidence intervals
+
+5. **Different hardware platforms:** Benchmark on NVIDIA GPUs, TPUs to understand hardware dependence
 
 ### Research Directions
 
-1. **Theoretical Analysis** — Why does CNN inductive bias help with limited data? Information-theoretic bounds?
-2. **Visualization & Interpretability** — Attention maps, feature importance, patch significance
-3. **Robustness Analysis** — Performance on corrupted images, adversarial examples, distribution shifts
-4. **Domain Adaptation** — Fine-tuning on natural, medical, satellite, or synthetic imagery
+1. **Interpretability:** Analyze learned representations through:
+   - Attention map visualization
+   - Feature importance analysis
+   - Saliency maps
+   - Patch significance analysis
+
+2. **Theoretical analysis:** Investigate why CNN inductive bias helps with limited data:
+   - Information-theoretic bounds on sample complexity
+   - Connection to implicit regularization
+   - PAC learning bounds
+
+3. **Robustness analysis:** Evaluate performance under:
+   - Image corruptions (noise, blur, contrast, brightness)
+   - Adversarial perturbations
+   - Distribution shifts (CIFAR-100-C, CIFAR-100-P)
+
+4. **Domain adaptation:** Fine-tune on diverse visual domains:
+   - Medical imaging (histology, X-ray, MRI)
+   - Satellite imagery
+   - Synthetic data (rendering engines)
+   - Sketch or painting datasets
+
+5. **Architecture search:** Use AutoML/NAS to discover optimal hybrid configurations for different dataset sizes and computational budgets
 
 ---
 
 ## References
 
-### Primary Reference
+### Primary References
 
 [1] Dosovitskiy, A., et al. "An Image is Worth 16×16 Words: Transformers for Image Recognition at Scale." ICLR, 2021.
 
@@ -338,29 +397,27 @@ The 20% train-validation gap suggests:
 
 [3] Touvron, H., et al. "Training Data-Efficient Image Transformers & Distillation Through Attention." ICML, 2021. (DeiT)
 
-### Related Work
+### Hybrid Architecture Papers
 
-**Hybrid Architectures:**
-- Early Convolutions Help Transformers See Better (Xiao et al., 2021)
-- Tokens-to-Token ViT (Yuan et al., 2021)
-- ConViT: Improving Vision Transformers with Soft Convolutional Inductive Biases (d'Ascoli et al., 2021)
+[4] Xiao, T., et al. "Early Convolutions Help Transformers See Better." NeurIPS, 2021.
 
-**Vision Transformers:**
-- DeiT: Data-efficient Image Transformers (Touvron et al., 2021)
-- Swin Transformer (Liu et al., 2021)
-- CaiT: Going Deeper with Image Transformers (Touvron et al., 2021)
+[5] Yuan, K., et al. "Tokens-to-Token ViT: Training Vision Transformers from Scratch on ImageNet." ICCV, 2021.
 
-### Implementation References
+[6] d'Ascoli, S., et al. "ConViT: Improving Vision Transformers with Soft Convolutional Inductive Biases." ICML, 2021.
 
-- PyTorch Documentation: https://pytorch.org/docs/
-- torchvision Transforms: https://pytorch.org/vision/stable/transforms.html
-- Timm Library: https://github.com/rwightman/pytorch-image-models
+### Vision Transformer Variants
 
----
+[7] Liu, Z., et al. "Swin Transformer: Hierarchical Vision Transformer using Shifted Windows." ICCV, 2021.
 
-## Acknowledgments
+[8] Touvron, H., et al. "Going Deeper with Image Transformers." ICML, 2021. (CaiT)
 
-This implementation draws inspiration from the original Vision Transformer paper and various hybrid architecture approaches in the literature. The convolutional stem design is influenced by research showing that early convolutions improve transformer performance on vision tasks.
+[9] Liang, Y., et al. "Not All Patches are What You Need: Expediting Vision Transformers via Token Reorganizations." ICLR, 2022.
+
+### Implementation Resources
+
+- PyTorch: https://pytorch.org/
+- torchvision: https://pytorch.org/vision/stable/
+- Timm (PyTorch Image Models): https://github.com/rwightman/pytorch-image-models
 
 ---
 
@@ -372,12 +429,19 @@ If you use this baseline model in your research, please cite:
 @misc{chaudhary2025hybridvit,
   title={Hybrid CNN-ViT: Data-Efficient Vision Transformer for CIFAR-100},
   author={Chaudhary, Aumkesh},
-  year={2025},
-  howpublished={\url{https://github.com/aumkeshchaudhary/Hybrid-CNN-ViT-Baseline}}
+  institution={Indian Institute of Technology, Patna},
+  year={2025}
 }
 ```
+
 ---
 
-## License
+**Author:** Aumkesh Chaudhary, Indian Institute of Technology, Patna  
+**Contact:** aumkeshchaudhary@gmail.com  
+**License:** Educational and research use
 
-This project is available for educational and research purposes. Please cite the original Vision Transformer paper when using this code or building upon this work.
+---
+
+## Acknowledgments
+
+This implementation draws inspiration from the original Vision Transformer paper and various hybrid architecture approaches in the literature. The convolutional stem design is informed by research demonstrating that early convolutions improve transformer performance on vision tasks, particularly on small datasets with limited pre-training resources.
